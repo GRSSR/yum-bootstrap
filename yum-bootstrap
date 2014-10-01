@@ -1,0 +1,66 @@
+local PROTOCOL_CHANNEL = 137
+local LISTEN_CHANNEL = os.getComputerID()
+
+print ("bootstrapping soviet protocol")
+
+local function split(string, limit, delimiter)
+	local delimiter = "%S+"
+	local ret = {}
+	for match in string.gmatch(string, delimiter) do
+		if limit and (#ret + 1) >= limit then
+			local start, finish = string:find(match, 1, true)
+			ret[#ret + 1] = string:sub(start)
+			break
+		else
+			ret[#ret + 1] = match
+		end
+	end
+	return ret
+end
+
+local debug = 0
+local modem = peripheral.find("modem")
+modem.open(LISTEN_CHANNEL)
+local sovietProtocol = {}
+sovietProtocol.send = function(sendChannel, replyChannel, method, id, body)
+	local message = method.." "..id.." "..body
+	if debug > 5 then
+		print("sending: "..message)
+	end
+	modem.transmit(sendChannel, replyChannel, message)
+end
+
+sovietProtocol.listen = function()
+	local event, modemSide, senderChannel, replyChannel,
+		message, senderDistance = os.pullEvent("modem_message")
+	if debug > 5 then
+		print("Recieved: "..message:sub(1, 30))
+	end
+	return split(message, 3)[3]
+end
+
+print("getting redstring")
+sovietProtocol.send(PROTOCOL_CHANNEL, LISTEN_CHANNEL, "install", "api", "redString")
+
+local file = sovietProtocol.listen()
+
+f = io.open("/api/redString", "w")
+f:write(file)
+f:close()
+
+print("getting sovietProtocol")
+sovietProtocol.send(PROTOCOL_CHANNEL, LISTEN_CHANNEL, "install", "api", "sovietProtocol")
+file = sovietProtocol.listen()
+
+f = io.open("/api/sovietProtocol", "w")
+f:write(file)
+f:close()
+
+print("getting Yum")
+sovietProtocol.send(PROTOCOL_CHANNEL, LISTEN_CHANNEL, "install", "yum", "yum")
+
+file = sovietProtocol.listen()
+
+f = io.open("/yum", "w")
+f:write(file)
+f:close()
